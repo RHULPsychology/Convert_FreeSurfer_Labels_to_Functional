@@ -6,14 +6,14 @@
 #######
 
 ### change to the corresponding subject folder
-source /usr/local/apps/psycapps/config/freesurfer_bash_update /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/freesurfer
+source /usr/local/apps/psycapps/config/freesurfer_bash_update <your freesurfer subjects dir>
 
 ### use fsl
 source /usr/local/apps/psycapps/config/fsl_bash
 
 ### Convert Freeesurfer Brain to volumetric brain (.mgz to .nii.gz)
 ### The nifti output of the previous step results in a volume image of 256x256x256. If you want to change the size use -- cropsize flag
-mri_convert --out_orientation RAS Sounds_analysis/freesurfer/sub-03/mri/brain.mgz Sounds_analysis/sub-03/freesurfer_brain.nii.gz
+mri_convert --out_orientation RAS <your freesurfer subjects dir>/<subject>/mri/brain.mgz <output_folder>/freesurfer_brain.nii.gz
 
 
 ### if you want to merge multiple labels use the following command
@@ -21,42 +21,42 @@ mri_convert --out_orientation RAS Sounds_analysis/freesurfer/sub-03/mri/brain.mg
 
 ### Convert Label to volume 
 
-mri_label2vol --label Sounds_analysis/freesurfer/sub-03/label/lh.V1_exvivo.thresh.label \
+mri_label2vol --label <your freesurfer subjects dir>/<subject>/label/lh.V1_exvivo.thresh.label \
               --identity \
-              --temp Sounds_analysis/freesurfer/sub-03/mri/brain.mgz \
+              --temp <your freesurfer subjects dir>/<subject>/mri/brain.mgz \
 	      --fillthresh 0.0  \
 	      --proj frac 0 1 .1 \
-	      --subject sub-03 --hemi lh \
-	      --o Sounds_analysis/sub-03/masks/lh_V1.nii.gz
+	      --subject <subject> --hemi lh \
+	      --o <output_folder>/<subject>/masks/lh_V1.nii.gz
 	      
 	      
 ### Fix the orientation of the mask
-mri_convert --out_orientation RAS Sounds_analysis/sub-03/masks/lh_V1.nii.gz Sounds_analysis/sub-03/masks/lh_V1.nii.gz
+mri_convert --out_orientation RAS <output_folder>/<subject>/masks/lh_V1.nii.gz <output_folder>/<subject>/masks/lh_V1.nii.gz
 
 ### Create mean of your functional scans using fslmaths
-fslmaths /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_BIDS_old/sub-03/ses-mri/func/sub-03_ses-ses-mri_task-sound_run-01_bold.nii.gz -Tmean /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_meants.nii.gz
+fslmaths <BIDS_Folder>/<subject>/ses-mri/func/<functional_run>.nii.gz -Tmean <output_folder>/<subject>/<functional_run>_meants.nii.gz
 
 ### Coregister Mean TS with freesurfer brain
 /usr/local/apps/psycapps/fsl/fsl-latest/bin/flirt \
-	-in /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_meants.nii.gz \
-	-ref /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/freesurfer_brain.nii.gz \
-	-out /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_bold2fs.nii.gz \
-	-omat /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_bold2fs.mat \
+	-in <output_folder>/<subject>/<functional_run>_meants.nii.gz \
+	-ref <output_folder>/<subject>/freesurfer_brain.nii.gz \
+	-out <output_folder>/<subject>/<functional_run>_bold2fs.nii.gz \
+	-omat <output_folder>/<subject>/<functional_run>_bold2fs.mat \
 	-bins 256 -cost corratio -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12  -interp trilinear
 	
 ### Invert the transformation matrix
 /usr/local/apps/psycapps/fsl/fsl-latest/bin/convert_xfm \
-	-omat /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_fs2bold.mat \
-	-inverse /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_bold2fs.mat
+	-omat <output_folder>/<subject>/<functional_run>_fs2bold.mat \
+	-inverse <output_folder>/<subject>/<functional_run>_bold2fs.mat
 
 ### Apply the tranformation matrix
 
 /usr/local/apps/psycapps/fsl/fsl-latest/bin/flirt \
-	-in /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/masks/lh_V1.nii.gz \
-	-applyxfm -init /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_fs2bold.mat \
-	-out /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/masks/lh_V1_bold.nii.gz \
+	-in <output_folder>/<subject>/masks/lh_V1.nii.gz \
+	-applyxfm -init <output_folder>/<subject>/<functional_run>_bold2fs.mat \
+	-out <output_folder>/<subject>/masks/lh_V1_bold.nii.gz \
 	-paddingsize 0.0 -interp trilinear \
-	-ref /MRIWork/MRIWork10/pv/giusi_pollicina/Sounds_analysis/sub-03/sub-03_ses-mri_task-sound_run-01_meants.nii.gz
+	-ref <output_folder>/<subject>/<functional_run>_meants.nii.gz
 
 
 
